@@ -1,5 +1,5 @@
 class Validator
-    attr_reader :a, :b, :i, :j, :max_i, :max_j, :max_k
+    attr_reader :a, :b, :i, :j, :max_i, :max_j, :max_k, :median
     def initialize(a1, a2)
       @a = a1
       @b = a2
@@ -27,14 +27,15 @@ class Validator
       ai = i != -1 ? a[i] : nil # a[i]
       bj = j != -1 ? b[j] : nil # b[j]
 
-      aix = i < max_i ? a[i+1] : nil # a[i+1]
-      bjx = j< max_j ? b[j+1] : nil # b[j+1]
+      aix = i + 1 < a.size ? a[i+1] : nil # a[i+1]
+      bjx = j + 1 < b.size ? b[j+1] : nil # b[j+1]
 
       # ai < bjx && bj < aix
       a_condition = ai.nil? || bjx.nil? || ai < bjx
       b_condition = bj.nil? || aix.nil? || bj < aix
 
       if a_condition && b_condition
+        @median = calc_median(ai, aix, bj, bjx)
         0
       elsif a_condition
         -1
@@ -42,8 +43,29 @@ class Validator
         1
       end
     end
+
+    private
+
+    def calc_median(ai, aix, bj, bjx)
+      next_value = [aix, bjx].compact.min
+      selected_value = [ai, bj].compact.max
+      even = (a.size + b.size) % 2 == 0
+
+      even ? (selected_value + next_value)/2.0 : next_value
+    end
 end
 
+require_relative '../bsearch/main'
+
+class Problem
+  def self.solve(a, b, log: false)
+    v = Validator.new(a, b)
+    bs = BSearch.new(0, v.max_k, log)
+    bs.search { |k| v.check(k) }
+
+    v.median
+  end
+end
 
 if defined? RSpec
   def check_sets_ij(params)
@@ -113,5 +135,63 @@ if defined? RSpec
       check_return_value({ 2 => 0 })
     end
 
+  end
+
+  RSpec.describe 'solution' do
+    use_cases = {
+      'naive 1' => {
+        a: [1, 2],
+        b: [3, 4],
+        result: 2.5,
+      },
+      'naive 2' => {
+        a: [1, 2, 3],
+        b: [4, 5],
+        result: 3,
+      },
+      'naive 3' => {
+        a: [1, 2],
+        b: [3, 4, 5],
+        result: 3,
+      },
+
+      'inequal length arrays, odd elements number' => {
+        a: [1, 3, 5, 8, 9],
+        b: [2, 4, 6, 7],
+        result: 5,
+      },
+      'equal length arrays, even elements number' => {
+        a: [1, 3, 5, 8],
+        b: [2, 4, 6, 7],
+        result: 4.5,
+      },
+      'inequal length arrays, even elements number' => {
+        a: [1, 3, 5, 8],
+        b: [2, 7],
+        result: 4.0,
+      },
+      'smallest possible arrays' => {
+        a: [1],
+        b: [2],
+        result: 1.5,
+      },
+      'smallest possible array + empty' => {
+        a: [1, 5],
+        b: [],
+        result: 3.0,
+      },
+    }
+
+    use_cases.each do |name, params|
+      a = params[:a]
+      b = params[:b]
+      result = params[:result]
+      it name do
+        expect(Problem.solve(a, b)).to eql(result)
+      end
+      it name + ' reversed' do
+        expect(Problem.solve(b, a)).to eql(result)
+      end
+    end
   end
 end
