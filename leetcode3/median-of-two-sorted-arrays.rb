@@ -1,8 +1,9 @@
 class Validator
-    attr_reader :a, :b, :i, :j, :max_i, :max_j, :max_k, :median
-    def initialize(a1, a2)
+    attr_reader :a, :b, :i, :j, :max_i, :max_j, :max_k, :median, :log
+    def initialize(a1, a2, log: false)
       @a = a1
       @b = a2
+      @log = log
 
       # amount of elements to be cut off by a median value
       n = (a1.size + a2.size)/2
@@ -15,8 +16,8 @@ class Validator
     # checks if k is a median point of 2 arrays
     # Results:
     #   0 yes
-    #   1 k is too low
-    #  -1 k is too high
+    #   1 k is too high
+    #  -1 k is too low
     def check(k)
       raise 'invalid argument' if k > max_k
       # if k == 0 then all a1's items are included
@@ -31,17 +32,20 @@ class Validator
       bjx = j + 1 < b.size ? b[j+1] : nil # b[j+1]
 
       # ai < bjx && bj < aix
-      a_condition = ai.nil? || bjx.nil? || ai < bjx
-      b_condition = bj.nil? || aix.nil? || bj < aix
+      a_condition = ai.nil? || bjx.nil? || ai <= bjx
+      b_condition = bj.nil? || aix.nil? || bj <= aix
 
-      if a_condition && b_condition
+      result = if a_condition && b_condition
         @median = calc_median(ai, aix, bj, bjx)
         0
       elsif a_condition
-        -1
-      else # b_condition
         1
+      else # b_condition
+        -1
       end
+
+      puts "k: #{k}: a#{[ai, aix]}, b#{[bj, bjx]}}, result: #{result}, median: #{median}" if log
+      result
     end
 
     private
@@ -59,7 +63,8 @@ require_relative '../bsearch/main'
 
 class Problem
   def self.solve(a, b, log: false)
-    v = Validator.new(a, b)
+    puts "#{a}\n#{b}\n" if log
+    v = Validator.new(a, b, log: log)
     bs = BSearch.new(0, v.max_k, log)
     bs.search { |k| v.check(k) }
 
@@ -99,7 +104,7 @@ if defined? RSpec
       it 'sets max_k' do expect(validator.max_k).to eql(3) end
 
       check_sets_ij({ 0 => [2, -1], 1 => [1, 0], 2 => [0, 1], 3 => [-1, 2] })
-      check_return_value({ 0 => 1, 1 => 0, 2 => -1, 3 => -1})
+      check_return_value({ 0 => -1, 1 => 0, 2 => 1, 3 => 1})
     end
 
     context 'inequal length arrays' do
@@ -112,7 +117,7 @@ if defined? RSpec
       it 'sets max_k' do expect(validator.max_k).to eql(1) end
 
       check_sets_ij({ 0 => [2, -1], 1 => [1, 0] })
-      check_return_value({ 0 => 0, 1 => -1 })
+      check_return_value({ 0 => 0, 1 => 1 })
     end
     context 'inequal length arrays reverse ' do
       let(:a) { [4] }
@@ -122,7 +127,7 @@ if defined? RSpec
       it 'sets max_i' do expect(validator.max_i).to eql(0) end
       it 'sets max_j' do expect(validator.max_j).to eql(2) end
       check_sets_ij({ 0 => [0, 1], 1 => [-1, 2] })
-      check_return_value({ 0 => 1, 1 => 0 })
+      check_return_value({ 0 => -1, 1 => 0 })
     end
 
     context 'inequal length arrays reverse ' do
@@ -131,7 +136,7 @@ if defined? RSpec
       subject(:validator) { Validator.new(a, b) }
 
       it 'sets max_k' do expect(validator.max_k).to eql(3) end
-      check_return_value({ 0 => 1, 1 => 1, 2 => 0, 3 => -1 })
+      check_return_value({ 0 => -1, 1 => -1, 2 => 0, 3 => 1 })
       check_return_value({ 2 => 0 })
     end
 
@@ -179,6 +184,21 @@ if defined? RSpec
         a: [1, 5],
         b: [],
         result: 3.0,
+      },
+      'all equal values 2' => {
+        a: [5, 5],
+        b: [5, 5, 5],
+        result: 5,
+      },
+      'all equal values 1' => {
+        a: [5],
+        b: [5],
+        result: 5.0,
+      },
+      'all equal values 3' => {
+        a: [5, 5, 5],
+        b: [5, 5, 5],
+        result: 5.0,
       },
     }
 
