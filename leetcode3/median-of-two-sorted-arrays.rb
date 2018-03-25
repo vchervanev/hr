@@ -51,11 +51,11 @@ class Validator
     private
 
     def calc_median(ai, aix, bj, bjx)
-      next_value = [aix, bjx].compact.min
-      selected_value = [ai, bj].compact.max
+      next_value = [aix, bjx].compact.min || 0
+      selected_value = [ai, bj].compact.max || 0
       even = (a.size + b.size) % 2 == 0
 
-      even ? (selected_value + next_value)/2.0 : next_value
+      even ? (selected_value + next_value)/2.0 : next_value.to_f
     end
 end
 
@@ -152,18 +152,18 @@ if defined? RSpec
       'naive 2' => {
         a: [1, 2, 3],
         b: [4, 5],
-        result: 3,
+        result: 3.0,
       },
       'naive 3' => {
         a: [1, 2],
         b: [3, 4, 5],
-        result: 3,
+        result: 3.0,
       },
 
       'inequal length arrays, odd elements number' => {
         a: [1, 3, 5, 8, 9],
         b: [2, 4, 6, 7],
-        result: 5,
+        result: 5.0,
       },
       'equal length arrays, even elements number' => {
         a: [1, 3, 5, 8],
@@ -188,7 +188,7 @@ if defined? RSpec
       'all equal values 2' => {
         a: [5, 5],
         b: [5, 5, 5],
-        result: 5,
+        result: 5.0,
       },
       'all equal values 1' => {
         a: [5],
@@ -199,6 +199,16 @@ if defined? RSpec
         a: [5, 5, 5],
         b: [5, 5, 5],
         result: 5.0,
+      },
+      'mini input' => {
+        a: [1],
+        b: [],
+        result: 1.0,
+      },
+      'empty input' => {
+        a: [],
+        b: [],
+        result: 0.0,
       },
     }
 
