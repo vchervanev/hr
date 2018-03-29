@@ -3,23 +3,51 @@ class PositionCalculator
     @step = step
     @rows = rows
     @size = size
-    @wave = -1
+    @wave = 0
     @row = 0
     @first = nil
   end
 
   def next
+    pos = nil
     if middle_row?
-
+      if @first.nil?
+        pos = @row
+        @first = true
+      elsif @first
+        pos = @step - @row
+        @first = false
+      else
+        @first = nil
+        @wave += 1
+        return self.next
+      end
     else
-      @wave += 1
+      if @first.nil?
+        pos = @row == 0 ? 0 : @step/2
+        @first = true
+      else
+        @wave += 1
+        @first = nil
+        return self.next
+      end
+    end
+
+    result = @wave * @step + pos
+    if result < @size
+      return result
+    else
+      @row += 1
+      @first = nil
+      @wave = 0
+      return self.next
     end
   end
 
   private
 
   def middle_row?
-    @row > 0 && @row < rows - 1
+    @row > 0 && @row < @rows - 1
   end
 end
 
@@ -42,7 +70,7 @@ if defined? RSpec
   RSpec.describe do
     use_cases =
       [
-        ['abcd', 3, 'abcd'],
+        ['abcd', 3, 'abdc'],
         ['abc', 3, 'abc'],
         ['ab', 3, 'ab'],
         ['a', 3, 'a'],
@@ -54,6 +82,7 @@ if defined? RSpec
         ['abcd', 2, 'acbd'],
         ['abcde', 2, 'acebd'],
         ['abcde', 3, 'aebdc'],
+        ['abcdefghijklm', 4, 'agmbfhlceikdj']
       ]
 
     use_cases.each do |input, size, result|
